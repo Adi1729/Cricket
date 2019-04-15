@@ -50,4 +50,5 @@ bbl_df = extract_tournament_stats(seasons = (2012,2019),id_ = 8044,tournament = 
 1. Parse scores properly
 2. Remove DL matches
 3. Team1 should be score of team batted first and not home team
+4. Objective : Find number of close matches
 '''
