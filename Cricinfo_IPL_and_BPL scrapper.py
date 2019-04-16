@@ -40,15 +40,35 @@ def extract_tournament_stats(seasons,id_,tournament):
 
     return df
 
-ipl_df = extract_tournament_stats(seasons = (2008,2019),id_ = 8048,tournament = 'ipl')
+ipl_df = extract_tournament_stats(seasons = (2018,2019),id_ = 8048,tournament = 'ipl')
 bbl_df = extract_tournament_stats(seasons = (2012,2019),id_ = 8044,tournament = 'big-bash-league')
     
-
 '''
 # Things to do 
 
 1. Parse scores properly
 2. Remove DL matches
 3. Team1 should be score of team batted first and not home team
-4. Objective : Find number of close matches
 '''
+
+import re
+
+ipl_df['Win Margin'] = ipl_df['result'].apply(lambda x:int(re.findall('\d+',x)[0]))
+ipl_df['Wickets_Runs'] = ipl_df['result'].apply(lambda x:(re.findall(r"(runs|wickets|wicket|run)",x))[0] if len(re.findall(r"(runs|wickets|wicket|run)",x))>0 else None)
+ipl_df['DL Applied'] = ipl_df['result'].apply(lambda x: 1 if len(re.findall(r"(DL|D/L)",x))>0 else 0)
+#ipl_df['Balls'] = ipl_df['result'].apply(lambda x:re.findall('balls|ball',x))
+ipl_df['Balls_Left'] = ipl_df['result'].apply(lambda x:int(re.findall('\d+',x)[1]) if len(re.findall('\d+',x))==2 else None)
+
+def close_win(x,wicket,balls,runs):
+    if (x[1]=='wicket' or x[1]=='wickets'):
+        return int(x[0]<=wicket or x[2]<=balls)
+    elif (x[1]=='runs' or x[1]=='run'):
+        return int(x[0]<=runs)
+    else:
+        return 0
+
+ipl_df['Close'] = ipl_df[['Win Margin','Wickets_Runs','Balls_Left']].apply(lambda x : 
+    close_win(x,wicket = 2,balls = 6,runs = 10),axis = 1)
+ipl_df['season'].groupby(['season'].mean(''))
+
+
