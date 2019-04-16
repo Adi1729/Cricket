@@ -1,7 +1,6 @@
 '''
 A look at number of close matches in IPL, BBL and PSL in all seasons.
 '''
-
 import urllib
 from bs4 import BeautifulSoup
 import ssl
@@ -123,3 +122,20 @@ psl = pd.DataFrame(data = {'season':psl.index,
     
 ibcp =ibc.merge(psl,on='season',how ='left')
     
+
+icc_df = extract_tournament_stats(seasons = (2016,2017),id_ = 8604,tournament = 'mens-t20-world-cup')
+
+icc_df['NoResult'] = icc_df['result'].apply(lambda x:0 if len(re.findall('\d+',x)) >0 or 'tied' in x  else 1)
+icc_df = icc_df[icc_df['NoResult']==0]
+icc_df['Win Margin'] = icc_df['result'].apply(lambda x:int(re.findall('\d+',x)[0]) if len(re.findall('\d+',x)) > 0 else 0)
+icc_df['Wickets_Runs'] = icc_df['result'].apply(lambda x:(re.findall(r"(runs|wickets|wicket|run)",x))[0] if len(re.findall(r"(runs|wickets|wicket|run)",x))>0 else None)
+icc_df['DL Applied'] = icc_df['result'].apply(lambda x: 1 if len(re.findall(r"(DL|D/L)",x))>0 else 0)
+icc_df['Balls_Left'] = icc_df['result'].apply(lambda x:int(re.findall('\d+',x)[1]) if len(re.findall('\d+',x))==2 else None)
+
+icc_df['Close'] = icc_df[['Win Margin','Wickets_Runs','Balls_Left','result']].apply(lambda x : 
+    close_win(x,wicket = 2,balls = 3,runs = 5),axis = 1)
+icc = icc_df.groupby('season')['Close'].mean()
+icc = pd.DataFrame(data = {'season':icc.index,
+                           'icc_close':icc.values * 100})
+    
+ibcp_icc =ibcp.merge(icc,on='season',how ='left')
